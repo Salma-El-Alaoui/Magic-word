@@ -8,16 +8,16 @@ import functools
 def estimate_posterior(alphabet, data, sequence_id, prev_positions, alpha, alpha_prime, W):
     '''
     :return: a list containing a the posterior log-probability for each position to be the starting position
-    of the sequence (sequence_id) : p(r_n|R_n | D)
+    of the sequence (sequence_id) : p(r_{sequence_id} | R_{sequence_id}, data)
     '''
     N = len(data)
     M = len(data[0])
     K = len(alphabet)
     # number of background positions
-    B = N*(M - W)
-    pos_prob = []
+    B = N * (M - W)
+    pos_proba = []
 
-    for r_i in range(M-W):
+    for r_i in range(M - W):
         positions = prev_positions
         positions[sequence_id] = r_i
 
@@ -34,28 +34,30 @@ def estimate_posterior(alphabet, data, sequence_id, prev_positions, alpha, alpha
         z_word = math.gamma((sum(alpha))) / math.gamma(N*(sum(alpha)))
 
         # background probabilities
-        p_list = [math.log(math.gamma(background_counts[alphabet[k]] + alpha_prime[k])) - math.log(math.gamma(alpha_prime[k])) for k in range(K)]
-        prob = math.log(z_background) + functools.reduce(lambda x,y : x+y, p_list)
+        p_list = [math.log(math.gamma(background_counts[alphabet[k]] + alpha_prime[k])) -
+                  math.log(math.gamma(alpha_prime[k])) for k in range(K)]
+        p = math.log(z_background) + functools.reduce(lambda x,y : x + y, p_list)
 
         # magic word probabilities
         for j in range(W):
-            p_list = [math.log(math.gamma(words_counts[j][alphabet[k]] + alpha[k])) - math.log(math.gamma(alpha[k])) for k in range(K)]
-            p_j = math.log(z_word) * functools.reduce(lambda x,y : x+y, p_list)
-            prob += p_j
+            p_list = [math.log(math.gamma(words_counts[j][alphabet[k]] + alpha[k])) -
+                      math.log(math.gamma(alpha[k])) for k in range(K)]
+            p_j = math.log(z_word) + functools.reduce(lambda x,y : x + y, p_list)
+            p += p_j
 
-        pos_prob.append(prob)
+        pos_proba.append(p)
 
-    return pos_prob
+    return pos_proba
 
 def sampler():
     # todo
-    return 0 
+    return 0
 
 
 if __name__ == '__main__':
     alphabet = ['A', 'T', 'G', 'C']
-    alpha_prime = [1,1,1,1] # prior parameter for background
-    alpha = [1,7,10,2] # prior parameter for magic word
+    alpha_prime = [1, 1, 1 ,1] # prior parameter for background
+    alpha = [1,7, 10, 2] # prior parameter for magic word
     N = 5 # number of sequences
     M = 10 # sequence length
     W = 3 # magic word length
