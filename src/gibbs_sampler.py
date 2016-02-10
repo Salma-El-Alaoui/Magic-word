@@ -18,7 +18,7 @@ def estimate_posterior(alphabet, data, sequence_id, prev_positions, alpha, alpha
     pos_proba = []
 
     for r_i in range(M - W):
-        positions = prev_positions
+        positions = list(prev_positions)
         positions[sequence_id] = r_i
 
         # Computing Bk for all k in alphabet
@@ -30,18 +30,18 @@ def estimate_posterior(alphabet, data, sequence_id, prev_positions, alpha, alpha
         words_counts = [Counter([words[i][j] for i in range(N)]) for j in range(W)]
 
         # Normalizing constants
-        z_background =  math.gamma((sum(alpha_prime))) / math.gamma(B*(sum(alpha_prime)))
-        z_word = math.gamma((sum(alpha))) / math.gamma(N*(sum(alpha)))
+        z_background =  float(math.gamma((sum(alpha_prime)))) / math.gamma(B*(sum(alpha_prime)))
+        z_word = float(math.gamma((sum(alpha)))) / math.gamma(N*(sum(alpha)))
 
         # background probabilities
-        p_list = [math.log(math.gamma(background_counts[alphabet[k]] + alpha_prime[k])) -
-                  math.log(math.gamma(alpha_prime[k])) for k in range(K)]
+        p_list = [float(math.log(math.gamma(background_counts[alphabet[k]] + alpha_prime[k]))) -
+                  float(math.log(math.gamma(alpha_prime[k]))) for k in range(K)]
         p = math.log(z_background) + functools.reduce(lambda x,y : x + y, p_list)
 
         # magic word probabilities
         for j in range(W):
-            p_list = [math.log(math.gamma(words_counts[j][alphabet[k]] + alpha[k])) -
-                      math.log(math.gamma(alpha[k])) for k in range(K)]
+            p_list = [float(math.log(math.gamma(words_counts[j][alphabet[k]] + alpha[k]))) -
+                      float(math.log(math.gamma(alpha[k]))) for k in range(K)]
             p_j = math.log(z_word) + functools.reduce(lambda x,y : x + y, p_list)
             p += p_j
 
@@ -49,9 +49,31 @@ def estimate_posterior(alphabet, data, sequence_id, prev_positions, alpha, alpha
 
     return pos_proba
 
-def sampler():
-    # todo
-    return 0
+def sampler(alphabet, data, alpha, alpha_prime, W, iterations = 100, min = 50, step = 10):
+
+    samples = []
+    N = len(data)
+    M = len(data[0])
+    K = len(alphabet)
+    #init positions
+    samples.append([np.random.randint(0, M-W+1) for i in range(N)])
+    for i in range(iterations):
+        positions = []
+        for j in range(N):
+            p_pos = estimate_posterior(alphabet, data, j, samples[-1], alpha, alpha_prime, W)
+            p_pos = np.asarray(p_pos)
+            print(p_pos)
+            p_pos = np.exp(p_pos)
+            print(p_pos)
+            #p_pos = p_pos/np.sum(p_pos)
+            #sample
+            position = np.argmax(np.random.multinomial(1,p_pos))
+            positions.append(position)
+        samples.append(positions)
+    #lag
+    chain = [samples[j] for j in range(min, iterations, step)]
+
+    return chain
 
 
 if __name__ == '__main__':
@@ -64,7 +86,5 @@ if __name__ == '__main__':
 
     # Generating sequences and true starting positions
     data, positions = gen.generate_sequences(alphabet, alpha, alpha_prime, N, M, W)
-    prev_positions =  np.random.randint(0, M - W + 1, N)
-    print(prev_positions)
-    test = estimate_posterior(alphabet, data, 1, positions, alpha, alpha_prime, W)
-    print(test)
+    samples = sampler(alphabet, data, alpha, alpha_prime, W)
+    print(samples)

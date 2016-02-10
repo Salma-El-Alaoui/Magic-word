@@ -13,7 +13,7 @@ def sample(alphabet, categorical):
     """
     return alphabet[np.argmax(np.random.multinomial(1,categorical))]
 
-def generate_sequences(alphabet = ['A', 'B', 'C','D'], alpha = [1,1,1,1], alpha_prime = [1,1,1,1], N = 5, M = 7, W =3 ):
+def generate_sequences(alphabet = ['A', 'B', 'C','D'], alpha = [1,1,1,1], alpha_prime = [1,1,1,1], N = 5, M = 10, W = 5):
     """
     :return: a list of sequences and a list of starting positions
     """
@@ -31,9 +31,13 @@ def generate_sequences(alphabet = ['A', 'B', 'C','D'], alpha = [1,1,1,1], alpha_
 
 if __name__ == "__main__":
     categorical = np.ones(4)*1/4
-    alphabet = ['A', 'B', 'C', 'D']
+    alphabet = ['A', 'C', 'G', 'T']
     alpha_prime = [1,1,1,1]
-    alpha = [1,5,6,2]
+    alpha = [12,7,3,1]
     sequences, positions = generate_sequences(alphabet,alpha, alpha_prime)
+    for s in sequences :
+        for c in s  :
+            print(c + ' & ', end='')
+        print("\\\\")
     print("sequences", sequences)
     print("positions", positions)
